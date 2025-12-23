@@ -34,7 +34,7 @@ export default function Dashboard() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back, John! Here's your business overview.</p>
+          <p className="text-gray-600 mt-2">Welcome back, John! Here&apos;s your business overview.</p>
         </div>
 
         {/* Date Range Selector */}

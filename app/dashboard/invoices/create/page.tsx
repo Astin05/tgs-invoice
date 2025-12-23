@@ -4,9 +4,6 @@ import React, { useState } from 'react';
 import {
   Plus,
   Trash2,
-  DollarSign,
-  Calendar,
-  User,
   Download,
   Send,
   Eye,
@@ -18,16 +15,22 @@ export default function CreateInvoicePage() {
   const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([
     { id: '1', description: 'Web Design Services', quantity: 1, unitPrice: 2500, total: 2500 },
   ]);
-  const [formData, setFormData] = useState({
-    invoiceNumber: 'INV-0044',
-    clientId: mockClients[0].id,
-    issueDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    templateId: mockInvoiceTemplates[0].id,
-    notes: '',
-    terms: 'Payment due within 30 days of invoice date.',
-    discount: 0,
-    tax: 0,
+  const [formData, setFormData] = useState(() => {
+    const now = new Date();
+    const dueDate = new Date();
+    dueDate.setDate(now.getDate() + 30);
+    
+    return {
+      invoiceNumber: 'INV-0044',
+      clientId: mockClients[0].id,
+      issueDate: now.toISOString().split('T')[0],
+      dueDate: dueDate.toISOString().split('T')[0],
+      templateId: mockInvoiceTemplates[0].id,
+      notes: '',
+      terms: 'Payment due within 30 days of invoice date.',
+      discount: 0,
+      tax: 0,
+    };
   });
 
   const [draggedItem, setDraggedItem] = useState<string | null>(null);

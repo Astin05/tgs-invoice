@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { DashboardStats } from '@/app/lib/mock-data';
 
 interface KPICardsProps {

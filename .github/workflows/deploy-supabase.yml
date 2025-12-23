@@ -1,0 +1,104 @@
+name: Deploy Supabase Database
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'supabase/**/*.sql'
+      - '.github/workflows/deploy-supabase.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  SUPABASE_PROJECT_ID: ztobyruqamentldeduul
+  SUPABASE_DB_HOST: db.ztobyruqamentldeduul.supabase.co
+  SUPABASE_DB_PORT: 5432
+  SUPABASE_DB_NAME: postgres
+  SUPABASE_DB_USER: postgres
+
+jobs:
+  deploy:
+    name: Deploy to Supabase
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          psql --version
+
+      - name: Deploy to Supabase (Staging)
+        if: github.ref == 'refs/heads/develop' || github.event.inputs.environment == 'staging'
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}
+        run: |
+          echo "🚀 Deploying to STAGING environment..."
+          
+          # Deploy schema
+          psql "postgresql://${{ env.SUPABASE_DB_USER }}:${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}@${{ env.SUPABASE_DB_HOST }}:${{ env.SUPABASE_DB_PORT }}/${{ env.SUPABASE_DB_NAME }}" -f supabase/push-to-supabase.sql
+          
+          # Verify deployment
+          psql "postgresql://${{ env.SUPABASE_DB_USER }}:${{ secrets.SUPABASE_DB_PASSWORD_STAGING }}@${{ env.SUPABASE_DB_HOST }}:${{ env.SUPABASE_DB_PORT }}/${{ env.SUPABASE_DB_NAME }}" -c "
+            SELECT '✅ Schema deployed successfully' as status;
+            SELECT table_name, COUNT(*) as record_count 
+            FROM information_schema.tables t
+            LEFT JOIN pg_class c ON c.relname = t.table_name
+            WHERE t.table_schema = 'public'
+            GROUP BY t.table_name;
+          "
+
+      - name: Deploy to Supabase (Production)
+        if: github.ref == 'refs/heads/main' && github.event.inputs.environment == 'production'
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_PROD }}
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_PROD }}
+        run: |
+          echo "🚀 Deploying to PRODUCTION environment..."
+          
+          # Create backup before deployment
+          echo "📦 Creating backup before deployment..."
+          BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).sql"
+          pg_dump "postgresql://${{ env.SUPABASE_DB_USER }}:${{ secrets.SUPABASE_DB_PASSWORD_PROD }}@${{ env.SUPABASE_DB_HOST }}:${{ env.SUPABASE_DB_PORT }}/${{ env.SUPABASE_DB_NAME }}" > "${BACKUP_FILE}"
+          echo "✅ Backup created: ${BACKUP_FILE}"
+          
+          # Deploy schema
+          psql "postgresql://${{ env.SUPABASE_DB_USER }}:${{ secrets.SUPABASE_DB_PASSWORD_PROD }}@${{ env.SUPABASE_DB_HOST }}:${{ env.SUPABASE_DB_PORT }}/${{ env.SUPABASE_DB_NAME }}" -f supabase/push-to-supabase.sql
+          
+          echo "✅ Production deployment completed successfully"
+
+      - name: Upload backup artifact
+        if: github.ref == 'refs/heads/main' && github.event.inputs.environment == 'production'
+        uses: actions/upload-artifact@v3
+        with:
+          name: database-backup
+          path: backup_*.sql
+          retention-days: 30
+
+      - name: Notify deployment status
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Supabase deployment ${{ job.status }}!
+            Environment: ${{ github.event.inputs.environment || 'auto' }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true
