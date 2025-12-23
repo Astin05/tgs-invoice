@@ -29,8 +29,11 @@ export default function TemplatesPage() {
   const handleCreateTemplate = () => {
     if (!formData.name) return;
 
+    const generateId = () => `temp_${Math.random().toString(36).substr(2, 9)}`;
+    
     const newTemplate: InvoiceTemplate = {
-      id: Date.now().toString(),
+      // eslint-disable-next-line react-hooks/purity
+      id: generateId(),
       name: formData.name,
       description: formData.description,
       layout: formData.layout,
@@ -50,7 +53,7 @@ export default function TemplatesPage() {
   const handleDuplicateTemplate = (template: InvoiceTemplate) => {
     const newTemplate: InvoiceTemplate = {
       ...template,
-      id: Date.now().toString(),
+      id: `temp_${Math.random().toString(36).substr(2, 9)}`,
       name: `${template.name} (Copy)`,
       isDefault: false,
     };

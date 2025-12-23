@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Calendar, Filter } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 const mockPayments = [
   {
