@@ -6,13 +6,14 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   FileText,
-  DollarSign,
+  CreditCard,
   Users,
-  BarChart3,
+  TrendingUp,
   Settings,
   HelpCircle,
-  Sparkles,
+  Zap,
   ChevronRight,
+  Inbox,
 } from 'lucide-react';
 import { useDashboardStore } from '@/app/lib/store';
 
@@ -27,15 +28,16 @@ interface NavItem {
 const navigationItems: NavItem[] = [
   { id: 'dashboard', icon: Home, label: 'Dashboard', href: '/dashboard' },
   { id: 'invoices', icon: FileText, label: 'Invoices', href: '/dashboard/invoices', badge: null },
-  { id: 'payments', icon: DollarSign, label: 'Payments', href: '/dashboard/payments', badge: null },
+  { id: 'payments', icon: CreditCard, label: 'Payments', href: '/dashboard/payments', badge: null },
   { id: 'clients', icon: Users, label: 'Clients', href: '/dashboard/clients' },
-  { id: 'reports', icon: BarChart3, label: 'Reports', href: '/dashboard/reports' },
+  { id: 'reports', icon: TrendingUp, label: 'Reports', href: '/dashboard/reports' },
+  { id: 'templates', icon: Inbox, label: 'Templates', href: '/dashboard/templates' },
   { id: 'settings', icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ];
 
 const bottomItems: NavItem[] = [
   { id: 'help', icon: HelpCircle, label: 'Help & Support', href: '#' },
-  { id: 'whatsnew', icon: Sparkles, label: "What's New", href: '#', badge: 'New' },
+  { id: 'whatsnew', icon: Zap, label: "What's New", href: '#', badge: 'New' },
 ];
 
 export function Sidebar() {

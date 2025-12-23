@@ -223,3 +223,106 @@ export const mockClients = [
   { id: '4', name: 'BuildIt Contractors', outstanding: 4200, paid: 3500 },
   { id: '5', name: 'Digital Marketing Pro', outstanding: 2450, paid: 4300 },
 ];
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  description: string;
+  layout: 'classic' | 'modern' | 'minimal';
+  primaryColor: string;
+  tertiaryColor?: string;
+  includeNotes: boolean;
+  includeTerms: boolean;
+  customCSS?: string;
+  isDefault: boolean;
+  createdDate: string;
+}
+
+export interface CompanySettings {
+  companyName: string;
+  personName: string;
+  email: string;
+  phone: string;
+  website?: string;
+  logo?: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  taxId?: string;
+  bankName: string;
+  accountNumber: string;
+  routingNumber: string;
+  accountHolderName: string;
+  currency: string;
+  defaultPaymentTerms: number; // in days
+}
+
+export const mockInvoiceTemplates: InvoiceTemplate[] = [
+  {
+    id: '1',
+    name: 'Classic Professional',
+    description: 'Traditional invoice layout with company header',
+    layout: 'classic',
+    primaryColor: '#2563EB',
+    tertiaryColor: '#E0E7FF',
+    includeNotes: true,
+    includeTerms: true,
+    isDefault: true,
+    createdDate: '2024-01-01',
+  },
+  {
+    id: '2',
+    name: 'Modern Minimalist',
+    description: 'Clean and minimal design with focus on content',
+    layout: 'modern',
+    primaryColor: '#000000',
+    tertiaryColor: '#F3F4F6',
+    includeNotes: true,
+    includeTerms: false,
+    isDefault: false,
+    createdDate: '2024-01-15',
+  },
+  {
+    id: '3',
+    name: 'Creative Vibrant',
+    description: 'Bold design with accent colors',
+    layout: 'minimal',
+    primaryColor: '#7C3AED',
+    tertiaryColor: '#EDE9FE',
+    includeNotes: true,
+    includeTerms: true,
+    isDefault: false,
+    createdDate: '2024-02-01',
+  },
+];
+
+export const mockCompanySettings: CompanySettings = {
+  companyName: 'InvoiceFlow Inc',
+  personName: 'John Doe',
+  email: 'john@invoiceflow.com',
+  phone: '+1 (555) 123-4567',
+  website: 'https://www.invoiceflow.com',
+  logo: 'IF',
+  address: '123 Business Avenue',
+  city: 'San Francisco',
+  state: 'CA',
+  zipCode: '94107',
+  country: 'United States',
+  taxId: 'TAX-123456789',
+  bankName: 'First National Bank',
+  accountNumber: '****5678',
+  routingNumber: '123456789',
+  accountHolderName: 'InvoiceFlow Inc',
+  currency: 'USD',
+  defaultPaymentTerms: 30,
+};

@@ -54,10 +54,10 @@ export function Header() {
       {/* Right Section */}
       <div className="flex items-center gap-4">
         {/* Create Button */}
-        <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+        <a href="/dashboard/invoices/create" className="hidden md:flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
           <span>+</span>
           <span>New Invoice</span>
-        </button>
+        </a>
 
         {/* Notifications */}
         <div className="relative">

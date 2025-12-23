@@ -14,10 +14,10 @@ export default function InvoicesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
           <p className="text-gray-600 mt-2">Manage and track all your invoices</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+        <a href="/dashboard/invoices/create" className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
           <Plus className="w-5 h-5" />
           Create Invoice
-        </button>
+        </a>
       </div>
 
       {/* Invoices List */}
