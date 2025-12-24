@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronRight, Save, Upload, Lock, Bell, Eye, Link2, LogOut } from 'lucide-react';
+import { ChevronRight, Save, Upload, Eye, Lock, Link2, LogOut } from 'lucide-react';
 import { mockCompanySettings } from '@/app/lib/mock-data';
 
 export default function SettingsPage() {
@@ -36,9 +36,36 @@ export default function SettingsPage() {
     notifyOnExpired: true,
   });
 
+  const [reminderSettings, setReminderSettings] = useState({
+    enabled: true,
+    fromName: 'InvoiceFlow Support',
+    fromEmail: 'billing@invoiceflow.com',
+    ccUser: false,
+    bccEmails: '',
+    lateFeesEnabled: false,
+    lateFeeType: 'percentage',
+    lateFeeAmount: 2.5,
+    lateFeeGraceDays: 3,
+  });
+
+  const [schedules] = useState([
+    { id: '1', name: 'Default Schedule', is_default: true, reminders: [
+      { offset: -3, tone: 'polite' },
+      { offset: 0, tone: 'friendly' },
+      { offset: 3, tone: 'firm' },
+      { offset: 7, tone: 'urgent' },
+    ]},
+  ]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleReminderInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target as HTMLInputElement;
+    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    setReminderSettings((prev) => ({ ...prev, [name]: val }));
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +83,7 @@ export default function SettingsPage() {
     { id: 'company', label: 'Company Info', icon: '🏢' },
     { id: 'personal', label: 'Personal Info', icon: '👤' },
     { id: 'bank', label: 'Bank Details', icon: '🏦' },
+    { id: 'reminders', label: 'Payment Reminders', icon: '⏰' },
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
     { id: 'invoice', label: 'Invoice Settings', icon: '📄' },
     { id: 'billing', label: 'Billing & Plans', icon: '💳' },
@@ -348,6 +376,167 @@ export default function SettingsPage() {
                   <button className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
                     <Save className="w-4 h-4" />
                     Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Reminders */}
+          {activeTab === 'reminders' && (
+            <div className="bg-white rounded-lg border border-gray-200 p-8">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Payment Reminders</h2>
+                  <p className="text-sm text-gray-600 mt-1">Automatically send follow-ups for unpaid invoices</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="enabled"
+                    checked={reminderSettings.enabled}
+                    onChange={handleReminderInputChange}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              <div className={`space-y-8 ${!reminderSettings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">From Name</label>
+                    <input
+                      type="text"
+                      name="fromName"
+                      value={reminderSettings.fromName}
+                      onChange={handleReminderInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">From Email</label>
+                    <input
+                      type="email"
+                      name="fromEmail"
+                      value={reminderSettings.fromEmail}
+                      onChange={handleReminderInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">Email Notifications</label>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="ccUser"
+                        checked={reminderSettings.ccUser}
+                        onChange={handleReminderInputChange}
+                        className="w-4 h-4 rounded border-gray-300 accent-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">CC me on all reminder emails</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">BCC Emails (comma separated)</label>
+                  <input
+                    type="text"
+                    name="bccEmails"
+                    value={reminderSettings.bccEmails}
+                    onChange={handleReminderInputChange}
+                    placeholder="accountant@example.com, manager@example.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-4">Reminder Schedule</h3>
+                  <div className="space-y-4">
+                    {schedules.map((schedule) => (
+                      <div key={schedule.id} className="p-4 border border-gray-200 rounded-lg">
+                        <div className="flex justify-between items-center mb-4">
+                          <h4 className="font-medium text-gray-900">{schedule.name}</h4>
+                          {schedule.is_default && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Default</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          {schedule.reminders.map((r, i) => (
+                            <div key={i} className="bg-gray-50 px-3 py-2 rounded border border-gray-200 text-sm">
+                              <span className="font-bold text-blue-600">
+                                {r.offset === 0 ? 'On Due Date' : r.offset < 0 ? `${Math.abs(r.offset)} days before` : `${r.offset} days after`}
+                              </span>
+                              <span className="mx-2 text-gray-400">|</span>
+                              <span className="capitalize">{r.tone} tone</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    <button className="text-blue-600 text-sm font-medium hover:underline flex items-center gap-1">
+                      + Add Custom Schedule
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-4">Late Fee Settings</h3>
+                  <div className="space-y-6">
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="lateFeesEnabled"
+                        checked={reminderSettings.lateFeesEnabled}
+                        onChange={handleReminderInputChange}
+                        className="w-4 h-4 rounded border-gray-300 accent-blue-600"
+                      />
+                      <span className="text-sm text-gray-700">Enable late fees for overdue invoices</span>
+                    </label>
+
+                    <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 ${!reminderSettings.lateFeesEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Fee Type</label>
+                        <select
+                          name="lateFeeType"
+                          value={reminderSettings.lateFeeType}
+                          onChange={handleReminderInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="percentage">Percentage (%)</option>
+                          <option value="flat">Flat Amount</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                        <input
+                          type="number"
+                          name="lateFeeAmount"
+                          value={reminderSettings.lateFeeAmount}
+                          onChange={handleReminderInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Grace Period (days)</label>
+                        <input
+                          type="number"
+                          name="lateFeeGraceDays"
+                          value={reminderSettings.lateFeeGraceDays}
+                          onChange={handleReminderInputChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-6 border-t border-gray-200">
+                  <button className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                    <Save className="w-4 h-4" />
+                    Save Reminder Settings
                   </button>
                 </div>
               </div>

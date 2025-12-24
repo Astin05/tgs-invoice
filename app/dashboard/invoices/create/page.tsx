@@ -26,6 +26,7 @@ export default function CreateInvoicePage() {
       issueDate: now.toISOString().split('T')[0],
       dueDate: dueDate.toISOString().split('T')[0],
       templateId: mockInvoiceTemplates[0].id,
+      currency: mockCompanySettings.currency,
       notes: '',
       terms: 'Payment due within 30 days of invoice date.',
       discount: 0,
@@ -56,11 +57,11 @@ export default function CreateInvoicePage() {
     setLineItems([...lineItems, newItem]);
   };
 
-  const handleUpdateLineItem = (id: string, field: keyof InvoiceLineItem, value: any) => {
+  const handleUpdateLineItem = (id: string, field: keyof InvoiceLineItem, value: string | number) => {
     setLineItems(
       lineItems.map((item) => {
         if (item.id === id) {
-          const updated = { ...item, [field]: value };
+          const updated = { ...item, [field]: value } as InvoiceLineItem;
           if (field === 'quantity' || field === 'unitPrice') {
             updated.total = updated.quantity * updated.unitPrice;
           }
@@ -103,7 +104,7 @@ export default function CreateInvoicePage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: formData.currency,
     }).format(amount);
   };
 
@@ -132,6 +133,20 @@ export default function CreateInvoicePage() {
                   onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <select
+                  value={formData.currency}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="CAD">CAD ($)</option>
+                  <option value="AUD">AUD ($)</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Template</label>
@@ -213,7 +228,7 @@ export default function CreateInvoicePage() {
 
             {/* Line Items Table */}
             <div className="space-y-3 mb-6">
-              {lineItems.map((item, index) => (
+              {lineItems.map((item) => (
                 <div
                   key={item.id}
                   draggable
