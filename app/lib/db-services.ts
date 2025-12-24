@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from './supabase';
 
 // ============ CLIENTS ============
@@ -49,7 +50,7 @@ export const createClient = async (
   }
 };
 
-export const updateClient = async (clientId: string, updates: any) => {
+export const updateClient = async (clientId: string, updates: Record<string, unknown>) => {
   try {
     const { data, error } = await supabase
       .from('clients')
@@ -165,7 +166,7 @@ export const createInvoice = async (
   }
 };
 
-export const updateInvoice = async (invoiceId: string, updates: any) => {
+export const updateInvoice = async (invoiceId: string, updates: Record<string, unknown>) => {
   try {
     const { data, error } = await supabase
       .from('invoices')
@@ -211,7 +212,7 @@ export const getInvoiceItems = async (invoiceId: string) => {
   }
 };
 
-export const updateInvoiceItem = async (itemId: string, updates: any) => {
+export const updateInvoiceItem = async (itemId: string, updates: Record<string, unknown>) => {
   try {
     const { data, error } = await supabase
       .from('invoice_items')
@@ -279,7 +280,7 @@ export const createPayment = async (
   }
 };
 
-export const updatePayment = async (paymentId: string, updates: any) => {
+export const updatePayment = async (paymentId: string, updates: Record<string, unknown>) => {
   try {
     const { data, error } = await supabase
       .from('payments')
@@ -343,7 +344,7 @@ export const createTemplate = async (
   }
 };
 
-export const updateTemplate = async (templateId: string, updates: any) => {
+export const updateTemplate = async (templateId: string, updates: Record<string, unknown>) => {
   try {
     const { data, error } = await supabase
       .from('invoice_templates')
@@ -406,7 +407,7 @@ export const getDashboardStats = async (userId: string) => {
       .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
 
     const paidThisMonth = payments
-      ?.filter((p: any) => {
+      ?.filter((p: Record<string, unknown>) => {
         const paymentDate = new Date(p.payment_date || '');
         return (
           p.status === 'completed' &&
@@ -414,7 +415,7 @@ export const getDashboardStats = async (userId: string) => {
           paymentDate.getFullYear() === currentYear
         );
       })
-      .reduce((sum, p: any) => sum + (p.amount || 0), 0) || 0;
+      .reduce((sum, p: Record<string, unknown>) => sum + (p.amount || 0), 0) || 0;
 
     return {
       totalOutstanding,
@@ -474,7 +475,158 @@ export const getActivityLogs = async (userId: string, limit = 10) => {
   }
 };
 
-// ============ HELPER FUNCTIONS ============
+// ============ PAYMENT REMINDERS ============
+
+export const getReminderSettings = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('reminders_enabled, default_reminder_schedule_id, reminder_from_name, reminder_from_email, reminder_cc_user, reminder_bcc_emails, late_fees_enabled, late_fee_type, late_fee_amount, late_fee_grace_days, reminders_paused_until')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const updateReminderSettings = async (userId: string, updates: Record<string, unknown>) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .update(updates)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const getReminderSchedules = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_schedules')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+export const createReminderSchedule = async (userId: string, scheduleData: Record<string, unknown>) => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_schedules')
+      .insert({ user_id: userId, ...scheduleData })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const getReminderLogs = async (invoiceId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('reminder_logs')
+      .select('*')
+      .eq('invoice_id', invoiceId)
+      .order('sent_at', { ascending: false });
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+// ============ RECURRING INVOICES ============
+
+export const getRecurringProfiles = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('recurring_profiles')
+      .select('*, clients(name)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+export const createRecurringProfile = async (userId: string, profileData: Record<string, unknown>) => {
+  try {
+    const { data, error } = await supabase
+      .from('recurring_profiles')
+      .insert({ user_id: userId, ...profileData })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const updateRecurringProfile = async (profileId: string, updates: Record<string, unknown>) => {
+  try {
+    const { data, error } = await supabase
+      .from('recurring_profiles')
+      .update(updates)
+      .eq('id', profileId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const deleteRecurringProfile = async (profileId: string) => {
+  try {
+    const { error } = await supabase.from('recurring_profiles').delete().eq('id', profileId);
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+};
+
+// ============ PUBLIC ACCESS ============
+
+export const getPublicInvoiceById = async (invoiceId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*, clients(*), invoice_items(*), users(company_name, email, phone, address, city, state, zip_code, country, logo_url)')
+      .eq('id', invoiceId)
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
 
 const updateInvoiceStatus = async (invoiceId: string) => {
   const { data: invoice } = await supabase
@@ -517,7 +669,7 @@ export const getNextInvoiceNumber = async (userId: string): Promise<string> => {
 
     const nextNum = (parseInt(match[1], 10) + 1).toString().padStart(4, '0');
     return `INV-${nextNum}`;
-  } catch (error) {
+  } catch {
     return 'INV-0001';
   }
 };

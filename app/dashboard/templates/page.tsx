@@ -4,10 +4,11 @@ import React, { useState } from 'react';
 import { Plus, Edit2, Trash2, Copy, Check } from 'lucide-react';
 import { mockInvoiceTemplates, InvoiceTemplate } from '@/app/lib/mock-data';
 
+const generateId = () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<InvoiceTemplate[]>(mockInvoiceTemplates);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<InvoiceTemplate | null>(null);
   const [formData, setFormData] = useState<{
     name: string;
     description: string;
@@ -29,8 +30,6 @@ export default function TemplatesPage() {
   const handleCreateTemplate = () => {
     if (!formData.name) return;
 
-    const generateId = () => `temp_${Math.random().toString(36).substr(2, 9)}`;
-    
     const newTemplate: InvoiceTemplate = {
       // eslint-disable-next-line react-hooks/purity
       id: generateId(),
@@ -53,7 +52,7 @@ export default function TemplatesPage() {
   const handleDuplicateTemplate = (template: InvoiceTemplate) => {
     const newTemplate: InvoiceTemplate = {
       ...template,
-      id: `temp_${Math.random().toString(36).substr(2, 9)}`,
+      id: generateId(),
       name: `${template.name} (Copy)`,
       isDefault: false,
     };
@@ -83,7 +82,6 @@ export default function TemplatesPage() {
       includeNotes: true,
       includeTerms: true,
     });
-    setEditingTemplate(null);
   };
 
   const layoutDescriptions = {

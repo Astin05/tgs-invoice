@@ -14,6 +14,7 @@ import {
   Zap,
   ChevronRight,
   Inbox,
+  Clock,
 } from 'lucide-react';
 import { useDashboardStore } from '@/app/lib/store';
 
@@ -28,6 +29,8 @@ interface NavItem {
 const navigationItems: NavItem[] = [
   { id: 'dashboard', icon: Home, label: 'Dashboard', href: '/dashboard' },
   { id: 'invoices', icon: FileText, label: 'Invoices', href: '/dashboard/invoices', badge: null },
+  { id: 'recurring', icon: Clock, label: 'Recurring', href: '/dashboard/recurring', badge: null },
+  { id: 'estimates', icon: FileText, label: 'Estimates', href: '/dashboard/estimates', badge: null },
   { id: 'payments', icon: CreditCard, label: 'Payments', href: '/dashboard/payments', badge: null },
   { id: 'clients', icon: Users, label: 'Clients', href: '/dashboard/clients' },
   { id: 'reports', icon: TrendingUp, label: 'Reports', href: '/dashboard/reports' },

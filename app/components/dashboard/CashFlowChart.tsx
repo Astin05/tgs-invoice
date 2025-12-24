@@ -26,6 +26,24 @@ interface CashFlowChartProps {
   data: CashFlowData[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
+        <p className="text-sm font-medium text-gray-900">{payload[0].payload.date}</p>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {payload.map((entry: any, index: number) => (
+          <p key={index} style={{ color: entry.color }} className="text-sm">
+            {entry.name}: ${entry.value.toLocaleString()}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function CashFlowChart({ data }: CashFlowChartProps) {
   const [period, setPeriod] = useState<'30' | '60' | '90'>('30');
 
@@ -37,23 +55,7 @@ export function CashFlowChart({ data }: CashFlowChartProps) {
   const filteredData = filterData(period);
 
   const formatCurrency = (value: number) => {
-    return `$${(value / 1000).toFixed(1)}k`;
-  };
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-          <p className="text-sm font-medium text-gray-900">{payload[0].payload.date}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: ${entry.value.toLocaleString()}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
+    return `${(value / 1000).toFixed(1)}k`;
   };
 
   return (
