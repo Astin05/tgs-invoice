@@ -718,35 +718,411 @@ export const getNextEstimateNumber = async (userId: string): Promise<string> => 
 
 // ============ MULTI-CURRENCY ============
 
-const CURRENCIES = [
-  { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1 },
-  { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.92 },
-  { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.79 },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: '$', rate: 1.36 },
-  { code: 'AUD', name: 'Australian Dollar', symbol: '$', rate: 1.53 },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 149.5 },
-  { code: 'CHF', name: 'Swiss Franc', symbol: 'Fr', rate: 0.88 },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.24 },
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.12 },
-  { code: 'MXN', name: 'Mexican Peso', symbol: '$', rate: 17.15 },
-];
-
-export const getCurrencies = () => CURRENCIES;
-
-export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: currency === 'JPY' ? 0 : 2,
-    maximumFractionDigits: currency === 'JPY' ? 0 : 2,
-  }).format(amount);
+export const getCurrencies = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('currencies')
+      .select('*')
+      .eq('active', true)
+      .order('code');
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
 };
 
-export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
-  const fromRate = CURRENCIES.find((c) => c.code === fromCurrency)?.rate || 1;
-  const toRate = CURRENCIES.find((c) => c.code === toCurrency)?.rate || 1;
-  const usdAmount = amount / fromRate;
-  return usdAmount * toRate;
+export const getCurrencyByCode = async (currencyCode: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('currencies')
+      .select('*')
+      .eq('code', currencyCode)
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const formatCurrency = (amount: number, currencyCode: string = 'USD', currencyData?: Record<string, unknown>): string => {
+  const code = currencyCode.toUpperCase();
+  const locale = (currencyData?.locale as string) || 'en-US';
+  const decimalPlaces = (currencyData?.decimal_places as number) ?? 2;
+  const minimumFractionDigits = decimalPlaces === 0 ? 0 : 2;
+  const maximumFractionDigits = decimalPlaces === 0 ? 0 : 2;
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits,
+      maximumFractionDigits,
+    }).format(amount);
+  } catch {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  }
+};
+
+export const formatCurrencyWithBase = async (
+  amount: number,
+  invoiceCurrency: string,
+  baseCurrency: string,
+  exchangeRate?: number
+): Promise<{ invoiceAmount: string; baseAmount: string; exchangeRateDisplay: string }> => {
+  const { data: invoiceCurrencyData } = await getCurrencyByCode(invoiceCurrency);
+  const { data: baseCurrencyData } = await getCurrencyByCode(baseCurrency);
+
+  const invoiceAmount = formatCurrency(amount, invoiceCurrency, invoiceCurrencyData || undefined);
+  const baseAmount = formatCurrency(amount * (exchangeRate || 1), baseCurrency, baseCurrencyData || undefined);
+  const exchangeRateDisplay = `1 ${baseCurrency} = ${(exchangeRate || 1).toFixed(4)} ${invoiceCurrency}`;
+
+  return { invoiceAmount, baseAmount, exchangeRateDisplay };
+};
+
+export const getExchangeRate = async (fromCurrency: string, toCurrency: string, date?: string): Promise<number> => {
+  try {
+    const query = supabase
+      .from('exchange_rates')
+      .select('rate')
+      .eq('base_currency', fromCurrency)
+      .eq('target_currency', toCurrency);
+
+    if (date) {
+      query.eq('rate_date', date);
+    } else {
+      query.order('rate_date', { ascending: false }).limit(1);
+    }
+
+    const { data, error } = await query.single();
+    if (error) throw error;
+    return (data?.rate as number) || 1;
+  } catch (error) {
+    return 1;
+  }
+};
+
+export const getLatestExchangeRates = async (baseCurrency: string = 'USD') => {
+  try {
+    const { data, error } = await supabase
+      .from('exchange_rates')
+      .select('target_currency, rate, rate_date')
+      .eq('base_currency', baseCurrency)
+      .order('rate_date', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+export const updateExchangeRate = async (
+  baseCurrency: string,
+  targetCurrency: string,
+  rate: number,
+  source: string = 'manual'
+) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { error } = await supabase
+      .from('exchange_rates')
+      .upsert({
+        base_currency: baseCurrency,
+        target_currency: targetCurrency,
+        rate,
+        source,
+        rate_date: today,
+        fetched_at: new Date().toISOString(),
+      }, {
+        onConflict: 'base_currency,target_currency,rate_date'
+      });
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+};
+
+export const getUserBaseCurrency = async (userId: string): Promise<string> => {
+  try {
+    const { data } = await supabase
+      .from('users')
+      .select('base_currency')
+      .eq('id', userId)
+      .single();
+    return (data?.base_currency as string) || 'USD';
+  } catch {
+    return 'USD';
+  }
+};
+
+// ============ CLIENT PORTAL ============
+
+export const requestPortalAccess = async (email: string) => {
+  try {
+    const { data: client } = await supabase
+      .from('clients')
+      .select('id, name, users(id, company_name)')
+      .eq('email', email)
+      .eq('portal_enabled', true)
+      .single();
+
+    if (!client) {
+      return { data: null, error: 'No client found with this email or portal access is disabled' };
+    }
+
+    const token = Buffer.from(`${client.id}:${Date.now()}:${Math.random()}`).toString('base64');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    const { error } = await supabase
+      .from('client_portal_sessions')
+      .insert({
+        client_id: client.id,
+        token,
+        email,
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (error) throw error;
+
+    return { data: { token, client }, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const verifyPortalSession = async (token: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('client_portal_sessions')
+      .select('*, clients(*, users(*))')
+      .eq('token', token)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+
+    if (error) throw error;
+
+    if (!data) {
+      return { data: null, error: 'Invalid or expired session' };
+    }
+
+    await supabase
+      .from('client_portal_sessions')
+      .update({ last_accessed_at: new Date().toISOString() })
+      .eq('id', data.id);
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const createPortalActivity = async (
+  clientId: string,
+  activityType: string,
+  resourceType?: string,
+  resourceId?: string,
+  metadata?: Record<string, unknown>
+) => {
+  try {
+    await supabase.from('client_portal_activity').insert({
+      client_id: clientId,
+      activity_type: activityType,
+      resource_type: resourceType,
+      resource_id: resourceId,
+      metadata,
+    });
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+};
+
+export const getPortalDashboardData = async (clientId: string) => {
+  try {
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const { data: estimates } = await supabase
+      .from('estimates')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('*, invoices(invoice_number)')
+      .eq('client_id', clientId)
+      .order('payment_date', { ascending: false })
+      .limit(10);
+
+    return { data: { invoices, estimates, payments }, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const getClientInvoices = async (clientId: string, status?: string) => {
+  try {
+    let query = supabase
+      .from('invoices')
+      .select('*, invoice_items(*)')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+export const getClientEstimates = async (clientId: string, status?: string) => {
+  try {
+    let query = supabase
+      .from('estimates')
+      .select('*, estimate_items(*)')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+export const acceptEstimate = async (
+  estimateId: string,
+  comments?: string
+) => {
+  try {
+    const { error } = await supabase
+      .from('estimates')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('id', estimateId);
+
+    if (error) throw error;
+
+    const { data: estimate } = await supabase
+      .from('estimates')
+      .select('client_id')
+      .eq('id', estimateId)
+      .single();
+
+    if (estimate) {
+      await createPortalActivity(
+        estimate.client_id as string,
+        'accept_estimate',
+        'estimate',
+        estimateId,
+        { comments }
+      );
+    }
+
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+};
+
+export const declineEstimate = async (
+  estimateId: string,
+  reason?: string,
+  comments?: string
+) => {
+  try {
+    const { error } = await supabase
+      .from('estimates')
+      .update({
+        status: 'declined',
+        declined_at: new Date().toISOString(),
+      })
+      .eq('id', estimateId);
+
+    if (error) throw error;
+
+    const { data: estimate } = await supabase
+      .from('estimates')
+      .select('client_id')
+      .eq('id', estimateId)
+      .single();
+
+    if (estimate) {
+      await createPortalActivity(
+        estimate.client_id as string,
+        'decline_estimate',
+        'estimate',
+        estimateId,
+        { reason, comments }
+      );
+    }
+
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+};
+
+export const getClientPayments = async (clientId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('payments')
+      .select('*, invoices(invoice_number, total_amount, issue_date, due_date)')
+      .eq('client_id', clientId)
+      .order('payment_date', { ascending: false });
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+export const updateClientProfile = async (
+  clientId: string,
+  updates: Record<string, unknown>
+) => {
+  try {
+    const { data, error } = await supabase
+      .from('clients')
+      .update(updates)
+      .eq('id', clientId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
 };
 
 // ============ PUBLIC ACCESS ============

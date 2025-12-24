@@ -82,6 +82,7 @@ export default function SettingsPage() {
   const settingsSections = [
     { id: 'company', label: 'Company Info', icon: '🏢' },
     { id: 'personal', label: 'Personal Info', icon: '👤' },
+    { id: 'currency', label: 'Currency Settings', icon: '💱' },
     { id: 'bank', label: 'Bank Details', icon: '🏦' },
     { id: 'reminders', label: 'Payment Reminders', icon: '⏰' },
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
@@ -539,6 +540,185 @@ export default function SettingsPage() {
                     Save Reminder Settings
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Currency Settings */}
+          {activeTab === 'currency' && (
+            <div className="bg-white rounded-lg border border-gray-200 p-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Currency Settings</h2>
+              <p className="text-sm text-gray-600 mb-8">
+                Configure your base currency and multi-currency preferences
+              </p>
+
+              <div className="space-y-8">
+                {/* Base Currency */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Base Currency
+                  </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    This is your accounting currency. All reports will show amounts in this currency.
+                  </p>
+                  <select
+                    value={formData.currency}
+                    name="currency"
+                    onChange={handleInputChange}
+                    className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                    <option value="CAD">CAD - Canadian Dollar</option>
+                    <option value="AUD">AUD - Australian Dollar</option>
+                    <option value="JPY">JPY - Japanese Yen</option>
+                    <option value="CHF">CHF - Swiss Franc</option>
+                    <option value="CNY">CNY - Chinese Yuan</option>
+                    <option value="INR">INR - Indian Rupee</option>
+                    <option value="MXN">MXN - Mexican Peso</option>
+                    <option value="SGD">SGD - Singapore Dollar</option>
+                    <option value="HKD">HKD - Hong Kong Dollar</option>
+                    <option value="NZD">NZD - New Zealand Dollar</option>
+                    <option value="SEK">SEK - Swedish Krona</option>
+                    <option value="NOK">NOK - Norwegian Krone</option>
+                    <option value="DKK">DKK - Danish Krone</option>
+                    <option value="BRL">BRL - Brazilian Real</option>
+                    <option value="ZAR">ZAR - South African Rand</option>
+                    <option value="RUB">RUB - Russian Ruble</option>
+                    <option value="KRW">KRW - South Korean Won</option>
+                    <option value="TRY">TRY - Turkish Lira</option>
+                    <option value="IDR">IDR - Indonesian Rupiah</option>
+                    <option value="THB">THB - Thai Baht</option>
+                    <option value="MYR">MYR - Malaysian Ringgit</option>
+                    <option value="PHP">PHP - Philippine Peso</option>
+                    <option value="PLN">PLN - Polish Złoty</option>
+                    <option value="AED">AED - UAE Dirham</option>
+                    <option value="SAR">SAR - Saudi Riyal</option>
+                    <option value="ILS">ILS - Israeli Shekel</option>
+                    <option value="CZK">CZK - Czech Koruna</option>
+                  </select>
+                </div>
+
+                {/* Warning */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>⚠️ Warning:</strong> Changing your base currency will affect all future invoices and reports. Historical data will be recalculated at current exchange rates.
+                  </p>
+                </div>
+
+                {/* Display Options */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Display Options
+                  </h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        className="w-4 h-4 rounded border-gray-300 accent-blue-600"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-700">
+                          Show both currencies on invoices
+                        </span>
+                        <p className="text-sm text-gray-500">
+                          Example: "$1,000 USD ($1,350 CAD)"
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        defaultChecked={true}
+                        className="w-4 h-4 rounded border-gray-300 accent-blue-600"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-700">
+                          Show exchange rate on invoices
+                        </span>
+                        <p className="text-sm text-gray-500">
+                          Example: "Exchange rate: 1 USD = 1.35 CAD"
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        defaultChecked={false}
+                        className="w-4 h-4 rounded border-gray-300 accent-blue-600"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-700">
+                          Round to nearest whole number
+                        </span>
+                        <p className="text-sm text-gray-500">
+                          Useful for currencies with small values
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Exchange Rate Source */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Exchange Rate Source
+                  </h3>
+                  <div className="space-y-4">
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer">
+                      <input
+                        type="radio"
+                        name="rateSource"
+                        value="automatic"
+                        defaultChecked
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-700">Automatic</span>
+                        <p className="text-sm text-gray-500">
+                          Updated daily at midnight UTC
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer">
+                      <input
+                        type="radio"
+                        name="rateSource"
+                        value="manual"
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-700">Manual</span>
+                        <p className="text-sm text-gray-500">
+                          Enter rates yourself
+                        </p>
+                      </div>
+                    </label>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        <strong>Exchange Rate Provider:</strong> ExchangeRate-API
+                        <br />
+                        <strong>Last Updated:</strong> Dec 24, 2024 at 12:00 AM UTC
+                      </p>
+                      <button className="mt-3 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition">
+                        Refresh Rates Now
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6 border-t border-gray-200">
+                <button className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                  <Save className="w-4 h-4" />
+                  Save Currency Settings
+                </button>
               </div>
             </div>
           )}
