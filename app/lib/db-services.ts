@@ -10,7 +10,6 @@ export const getClients = async (userId: string) => {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
-
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (error) {
@@ -42,7 +41,6 @@ export const createClient = async (
       })
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -58,7 +56,6 @@ export const updateClient = async (clientId: string, updates: Record<string, unk
       .eq('id', clientId)
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -85,7 +82,6 @@ export const getInvoices = async (userId: string) => {
       .select('*, clients(name), invoice_items(*)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
-
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (error) {
@@ -100,7 +96,6 @@ export const getInvoiceById = async (invoiceId: string) => {
       .select('*, clients(name, email, phone, address), invoice_items(*)')
       .eq('id', invoiceId)
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -134,7 +129,6 @@ export const createInvoice = async (
   }>
 ) => {
   try {
-    // Create invoice
     const { data: invoice, error: invoiceError } = await supabase
       .from('invoices')
       .insert({
@@ -143,23 +137,17 @@ export const createInvoice = async (
       })
       .select()
       .single();
-
     if (invoiceError) throw invoiceError;
-
-    // Create invoice items
     if (invoice && items.length > 0) {
       const itemsWithInvoiceId = items.map((item) => ({
         invoice_id: invoice.id,
         ...item,
       }));
-
       const { error: itemsError } = await supabase
         .from('invoice_items')
         .insert(itemsWithInvoiceId);
-
       if (itemsError) throw itemsError;
     }
-
     return { data: invoice, error: null };
   } catch (error) {
     return { data: null, error };
@@ -174,7 +162,6 @@ export const updateInvoice = async (invoiceId: string, updates: Record<string, u
       .eq('id', invoiceId)
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -184,10 +171,7 @@ export const updateInvoice = async (invoiceId: string, updates: Record<string, u
 
 export const deleteInvoice = async (invoiceId: string) => {
   try {
-    // Delete invoice items first
     await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId);
-
-    // Delete invoice
     const { error } = await supabase.from('invoices').delete().eq('id', invoiceId);
     if (error) throw error;
     return { error: null };
@@ -204,7 +188,6 @@ export const getInvoiceItems = async (invoiceId: string) => {
       .from('invoice_items')
       .select('*')
       .eq('invoice_id', invoiceId);
-
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (error) {
@@ -220,7 +203,6 @@ export const updateInvoiceItem = async (itemId: string, updates: Record<string, 
       .eq('id', itemId)
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -237,7 +219,6 @@ export const getPayments = async (userId: string) => {
       .select('*, invoices(invoice_number, total_amount, clients(name))')
       .eq('user_id', userId)
       .order('payment_date', { ascending: false });
-
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (error) {
@@ -266,14 +247,10 @@ export const createPayment = async (
       })
       .select()
       .single();
-
     if (error) throw error;
-
-    // Update invoice status to paid if amount covers total
     if (paymentData.status === 'completed') {
       await updateInvoiceStatus(paymentData.invoice_id);
     }
-
     return { data, error: null };
   } catch (error) {
     return { data: null, error };
@@ -288,7 +265,6 @@ export const updatePayment = async (paymentId: string, updates: Record<string, u
       .eq('id', paymentId)
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -305,7 +281,6 @@ export const getTemplates = async (userId: string) => {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
-
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (error) {
@@ -336,7 +311,6 @@ export const createTemplate = async (
       })
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -352,7 +326,6 @@ export const updateTemplate = async (templateId: string, updates: Record<string,
       .eq('id', templateId)
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -374,29 +347,21 @@ export const deleteTemplate = async (templateId: string) => {
 
 export const getDashboardStats = async (userId: string) => {
   try {
-    // Get invoices
     const { data: invoices } = await supabase
       .from('invoices')
       .select('status, total_amount, due_date')
       .eq('user_id', userId);
-
-    // Get payments
     const { data: payments } = await supabase
       .from('payments')
-      .select('amount, status')
+      .select('amount, status, payment_date')
       .eq('user_id', userId);
-
     if (!invoices) return null;
-
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-
-    // Calculate stats
     const totalOutstanding = invoices
       .filter((inv) => inv.status !== 'paid')
       .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
-
     const overdue = invoices
       .filter(
         (inv) =>
@@ -405,18 +370,16 @@ export const getDashboardStats = async (userId: string) => {
           new Date(inv.due_date) < now
       )
       .reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
-
     const paidThisMonth = payments
-      ?.filter((p: Record<string, unknown>) => {
-        const paymentDate = new Date(p.payment_date || '');
+      ?.filter((p) => {
+        const paymentDate = new Date((p.payment_date as string) || '');
         return (
           p.status === 'completed' &&
           paymentDate.getMonth() === currentMonth &&
           paymentDate.getFullYear() === currentYear
         );
       })
-      .reduce((sum, p: Record<string, unknown>) => sum + (p.amount || 0), 0) || 0;
-
+      .reduce((sum, p) => sum + ((p.amount as number) || 0), 0) || 0;
     return {
       totalOutstanding,
       overdue,
@@ -451,7 +414,6 @@ export const createActivityLog = async (
       user_id: userId,
       ...activityData,
     });
-
     if (error) throw error;
     return { error: null };
   } catch (error) {
@@ -467,85 +429,6 @@ export const getActivityLogs = async (userId: string, limit = 10) => {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
-
-    if (error) throw error;
-    return { data: data || [], error: null };
-  } catch (error) {
-    return { data: [], error };
-  }
-};
-
-// ============ PAYMENT REMINDERS ============
-
-export const getReminderSettings = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('reminders_enabled, default_reminder_schedule_id, reminder_from_name, reminder_from_email, reminder_cc_user, reminder_bcc_emails, late_fees_enabled, late_fee_type, late_fee_amount, late_fee_grace_days, reminders_paused_until')
-      .eq('user_id', userId)
-      .single();
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-export const updateReminderSettings = async (userId: string, updates: Record<string, unknown>) => {
-  try {
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .update(updates)
-      .eq('user_id', userId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-export const getReminderSchedules = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('reminder_schedules')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return { data: data || [], error: null };
-  } catch (error) {
-    return { data: [], error };
-  }
-};
-
-export const createReminderSchedule = async (userId: string, scheduleData: Record<string, unknown>) => {
-  try {
-    const { data, error } = await supabase
-      .from('reminder_schedules')
-      .insert({ user_id: userId, ...scheduleData })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (error) {
-    return { data: null, error };
-  }
-};
-
-export const getReminderLogs = async (invoiceId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('reminder_logs')
-      .select('*')
-      .eq('invoice_id', invoiceId)
-      .order('sent_at', { ascending: false });
-
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (error) {
@@ -562,7 +445,6 @@ export const getRecurringProfiles = async (userId: string) => {
       .select('*, clients(name)')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
-
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (error) {
@@ -570,14 +452,46 @@ export const getRecurringProfiles = async (userId: string) => {
   }
 };
 
-export const createRecurringProfile = async (userId: string, profileData: Record<string, unknown>) => {
+export const createRecurringProfile = async (
+  userId: string,
+  profileData: {
+    client_id: string;
+    profile_name: string;
+    frequency: string;
+    start_date: string;
+    end_date?: string;
+    line_items: Array<{
+      name: string;
+      description?: string;
+      quantity: number;
+      unit_price: number;
+      line_total: number;
+    }>;
+    subtotal: number;
+    tax_rate?: number;
+    tax_amount?: number;
+    total_amount: number;
+    currency?: string;
+    notes?: string;
+    terms?: string;
+    auto_send?: boolean;
+    due_date_type?: string;
+    due_date_days?: number;
+    email_subject?: string;
+    email_body?: string;
+  }
+) => {
   try {
     const { data, error } = await supabase
       .from('recurring_profiles')
-      .insert({ user_id: userId, ...profileData })
+      .insert({
+        user_id: userId,
+        ...profileData,
+        next_billing_date: profileData.start_date,
+        status: 'active',
+      })
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -593,7 +507,6 @@ export const updateRecurringProfile = async (profileId: string, updates: Record<
       .eq('id', profileId)
       .select()
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -611,6 +524,231 @@ export const deleteRecurringProfile = async (profileId: string) => {
   }
 };
 
+// ============ ESTIMATES ============
+
+export const getEstimates = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('estimates')
+      .select('*, clients(name, email)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+};
+
+export const getEstimateById = async (estimateId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('estimates')
+      .select('*, clients(*), estimate_items(*)')
+      .eq('id', estimateId)
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const createEstimate = async (
+  userId: string,
+  estimateData: {
+    client_id: string;
+    estimate_number: string;
+    issue_date: string;
+    expiry_date: string;
+    subtotal: number;
+    discount_amount?: number;
+    tax_amount?: number;
+    total_amount: number;
+    currency?: string;
+    notes?: string;
+    terms?: string;
+    template_id?: string;
+  },
+  items: Array<{
+    name: string;
+    description?: string;
+    quantity: number;
+    unit_price: number;
+    line_total: number;
+  }>
+) => {
+  try {
+    const { data: estimate, error: estimateError } = await supabase
+      .from('estimates')
+      .insert({
+        user_id: userId,
+        ...estimateData,
+        status: 'draft',
+      })
+      .select()
+      .single();
+    if (estimateError) throw estimateError;
+    if (estimate && items.length > 0) {
+      const itemsWithEstimateId = items.map((item) => ({
+        estimate_id: estimate.id,
+        ...item,
+      }));
+      const { error: itemsError } = await supabase
+        .from('estimate_items')
+        .insert(itemsWithEstimateId);
+      if (itemsError) throw itemsError;
+    }
+    return { data: estimate, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const updateEstimate = async (estimateId: string, updates: Record<string, unknown>) => {
+  try {
+    const { data, error } = await supabase
+      .from('estimates')
+      .update(updates)
+      .eq('id', estimateId)
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const deleteEstimate = async (estimateId: string) => {
+  try {
+    await supabase.from('estimate_items').delete().eq('estimate_id', estimateId);
+    const { error } = await supabase.from('estimates').delete().eq('id', estimateId);
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    return { error };
+  }
+};
+
+export const convertEstimateToInvoice = async (estimateId: string, userId: string) => {
+  try {
+    const { data: estimate, error: estimateError } = await supabase
+      .from('estimates')
+      .select('*, estimate_items(*)')
+      .eq('id', estimateId)
+      .single();
+    if (estimateError) throw estimateError;
+    if (!estimate) throw new Error('Estimate not found');
+    const invoiceNumber = await getNextInvoiceNumber(userId);
+    const issueDate = new Date().toISOString().split('T')[0];
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+    const dueDateStr = dueDate.toISOString().split('T')[0];
+    const { data: invoice, error: invoiceError } = await supabase
+      .from('invoices')
+      .insert({
+        user_id: userId,
+        client_id: estimate.client_id,
+        invoice_number: invoiceNumber,
+        issue_date: issueDate,
+        due_date: dueDateStr,
+        status: 'draft',
+        subtotal: estimate.subtotal,
+        discount_amount: estimate.discount_amount || 0,
+        tax_amount: estimate.tax_amount || 0,
+        total_amount: estimate.total_amount,
+        currency: estimate.currency || 'USD',
+        notes: estimate.notes,
+        terms: estimate.terms,
+        template_id: estimate.template_id,
+      })
+      .select()
+      .single();
+    if (invoiceError) throw invoiceError;
+    if (estimate.estimate_items && estimate.estimate_items.length > 0) {
+      const itemsWithInvoiceId = estimate.estimate_items.map((item: Record<string, unknown>) => ({
+        invoice_id: invoice.id,
+        user_id: userId,
+        name: item.name,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        line_total: item.line_total,
+        item_type: 'service',
+      }));
+      const { error: itemsError } = await supabase
+        .from('invoice_items')
+        .insert(itemsWithInvoiceId);
+      if (itemsError) throw itemsError;
+    }
+    await supabase
+      .from('estimates')
+      .update({
+        status: 'invoiced',
+        invoice_id: invoice.id,
+      })
+      .eq('id', estimateId);
+    return { data: invoice, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+export const getNextEstimateNumber = async (userId: string): Promise<string> => {
+  try {
+    const { data } = await supabase
+      .from('estimates')
+      .select('estimate_number')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (!data || data.length === 0) {
+      return 'EST-0001';
+    }
+    const lastNumber = data[0].estimate_number;
+    const match = lastNumber.match(/(\d+)$/);
+    if (!match) return 'EST-0001';
+    const nextNum = (parseInt(match[1], 10) + 1).toString().padStart(4, '0');
+    return `EST-${nextNum}`;
+  } catch {
+    return 'EST-0001';
+  }
+};
+
+// ============ MULTI-CURRENCY ============
+
+const CURRENCIES = [
+  { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1 },
+  { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.92 },
+  { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.79 },
+  { code: 'CAD', name: 'Canadian Dollar', symbol: '$', rate: 1.36 },
+  { code: 'AUD', name: 'Australian Dollar', symbol: '$', rate: 1.53 },
+  { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 149.5 },
+  { code: 'CHF', name: 'Swiss Franc', symbol: 'Fr', rate: 0.88 },
+  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.24 },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.12 },
+  { code: 'MXN', name: 'Mexican Peso', symbol: '$', rate: 17.15 },
+];
+
+export const getCurrencies = () => CURRENCIES;
+
+export const formatCurrency = (amount: number, currency: string = 'USD'): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: currency === 'JPY' ? 0 : 2,
+    maximumFractionDigits: currency === 'JPY' ? 0 : 2,
+  }).format(amount);
+};
+
+export const convertCurrency = (amount: number, fromCurrency: string, toCurrency: string): number => {
+  const fromRate = CURRENCIES.find((c) => c.code === fromCurrency)?.rate || 1;
+  const toRate = CURRENCIES.find((c) => c.code === toCurrency)?.rate || 1;
+  const usdAmount = amount / fromRate;
+  return usdAmount * toRate;
+};
+
 // ============ PUBLIC ACCESS ============
 
 export const getPublicInvoiceById = async (invoiceId: string) => {
@@ -620,7 +758,6 @@ export const getPublicInvoiceById = async (invoiceId: string) => {
       .select('*, clients(*), invoice_items(*), users(company_name, email, phone, address, city, state, zip_code, country, logo_url)')
       .eq('id', invoiceId)
       .single();
-
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -634,17 +771,13 @@ const updateInvoiceStatus = async (invoiceId: string) => {
     .select('total_amount')
     .eq('id', invoiceId)
     .single();
-
   if (!invoice) return;
-
   const { data: payments } = await supabase
     .from('payments')
     .select('amount')
     .eq('invoice_id', invoiceId)
     .eq('status', 'completed');
-
   const totalPaid = payments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-
   if (totalPaid >= invoice.total_amount) {
     await updateInvoice(invoiceId, { status: 'paid', paid_at: new Date().toISOString() });
   }
@@ -658,15 +791,12 @@ export const getNextInvoiceNumber = async (userId: string): Promise<string> => {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1);
-
     if (!data || data.length === 0) {
       return 'INV-0001';
     }
-
     const lastNumber = data[0].invoice_number;
     const match = lastNumber.match(/(\d+)$/);
     if (!match) return 'INV-0001';
-
     const nextNum = (parseInt(match[1], 10) + 1).toString().padStart(4, '0');
     return `INV-${nextNum}`;
   } catch {
