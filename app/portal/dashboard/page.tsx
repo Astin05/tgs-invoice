@@ -15,10 +15,35 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+interface ClientData {
+  name: string;
+  email?: string;
+  [key: string]: unknown;
+}
+
+interface InvoiceData {
+  id: string;
+  invoice_number: string;
+  issue_date: string;
+  total_amount: number;
+  status: string;
+  [key: string]: unknown;
+}
+
+interface EstimateData {
+  id: string;
+  estimate_number: string;
+  issue_date: string;
+  expiry_date: string;
+  total_amount: number;
+  status: string;
+  [key: string]: unknown;
+}
+
 export default function PortalDashboardPage() {
   const { sessionToken, logout } = usePortal();
   const router = useRouter();
-  const [client, setClient] = useState<Record<string, unknown> | null>(null);
+  const [client, setClient] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<Record<string, unknown> | null>(null);
 
@@ -32,7 +57,7 @@ export default function PortalDashboardPage() {
       return;
     }
 
-    setClient(sessionData.clients);
+    setClient(sessionData.clients as ClientData);
 
     const { data } = await getPortalDashboardData(sessionData.client_id as string);
     setDashboardData(data);
@@ -50,7 +75,8 @@ export default function PortalDashboardPage() {
       return;
     }
     loadDashboard();
-  }, [sessionToken, loadDashboard, router, logout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionToken]);
 
   if (loading) {
     return (
@@ -60,30 +86,26 @@ export default function PortalDashboardPage() {
     );
   }
 
-  const invoices = (dashboardData?.invoices as Record<string, unknown>[]) || [];
-  const estimates = (dashboardData?.estimates as Record<string, unknown>[]) || [];
+  const invoices = (dashboardData?.invoices as InvoiceData[]) || [];
+  const estimates = (dashboardData?.estimates as EstimateData[]) || [];
   const payments = (dashboardData?.payments as Record<string, unknown>[]) || [];
 
   const outstandingInvoices = invoices.filter(
     (inv) => {
-      const status = inv.status as string;
-      const dueDate = inv.due_date as string;
-      return status !== 'paid' && status !== 'cancelled';
+      return inv.status !== 'paid' && inv.status !== 'cancelled';
     }
   );
   const overdueInvoices = invoices.filter((inv) => {
-    const status = inv.status as string;
-    const dueDate = inv.due_date as string;
-    if (status === 'paid' || status === 'cancelled') return false;
-    return new Date(dueDate) < new Date();
+    if (inv.status === 'paid' || inv.status === 'cancelled') return false;
+    return new Date(inv.issue_date) < new Date();
   });
 
   const totalOutstanding = outstandingInvoices.reduce(
-    (sum: number, inv: Record<string, unknown>) => sum + ((inv.total_amount as number) || 0),
+    (sum: number, inv: InvoiceData) => sum + (inv.total_amount || 0),
     0
   );
   const totalOverdue = overdueInvoices.reduce(
-    (sum: number, inv: Record<string, unknown>) => sum + ((inv.total_amount as number) || 0),
+    (sum: number, inv: InvoiceData) => sum + (inv.total_amount || 0),
     0
   );
 
@@ -195,9 +217,9 @@ export default function PortalDashboardPage() {
                 <p className="text-gray-500 text-center py-8">No invoices yet</p>
               ) : (
                 <div className="space-y-4">
-                  {invoices.slice(0, 5).map((invoice: Record<string, unknown>) => (
+                  {invoices.slice(0, 5).map((invoice: InvoiceData) => (
                     <div
-                      key={invoice.id as string}
+                      key={invoice.id}
                       className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition"
                     >
                       <div>
@@ -205,18 +227,18 @@ export default function PortalDashboardPage() {
                           {invoice.invoice_number}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {new Date(invoice.issue_date as string).toLocaleDateString()}
+                          {new Date(invoice.issue_date).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
-                          ${((invoice.total_amount as number) || 0).toFixed(2)}
+                          ${(invoice.total_amount || 0).toFixed(2)}
                         </p>
                         <span
                           className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                            (invoice.status as string) === 'paid'
+                            invoice.status === 'paid'
                               ? 'bg-green-100 text-green-700'
-                              : (invoice.status as string) === 'overdue'
+                              : invoice.status === 'overdue'
                               ? 'bg-red-100 text-red-700'
                               : 'bg-blue-100 text-blue-700'
                           }`}
@@ -251,9 +273,9 @@ export default function PortalDashboardPage() {
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {estimates.slice(0, 5).map((estimate: Record<string, unknown>) => (
+                  {estimates.slice(0, 5).map((estimate: EstimateData) => (
                     <div
-                      key={estimate.id as string}
+                      key={estimate.id}
                       className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition"
                     >
                       <div>
@@ -261,18 +283,18 @@ export default function PortalDashboardPage() {
                           {estimate.estimate_number}
                         </p>
                         <p className="text-sm text-gray-600">
-                          Expires: {new Date(estimate.expiry_date as string).toLocaleDateString()}
+                          Expires: {new Date(estimate.expiry_date).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-gray-900">
-                          ${((estimate.total_amount as number) || 0).toFixed(2)}
+                          ${(estimate.total_amount || 0).toFixed(2)}
                         </p>
                         <span
                           className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                            (estimate.status as string) === 'accepted'
+                            estimate.status === 'accepted'
                               ? 'bg-green-100 text-green-700'
-                              : (estimate.status as string) === 'declined'
+                              : estimate.status === 'declined'
                               ? 'bg-red-100 text-red-700'
                               : 'bg-yellow-100 text-yellow-700'
                           }`}

@@ -624,7 +624,7 @@ export default function SettingsPage() {
                           Show both currencies on invoices
                         </span>
                         <p className="text-sm text-gray-500">
-                          Example: "$1,000 USD ($1,350 CAD)"
+                          Example: &ldquo;$1,000 USD ($1,350 CAD)&rdquo;
                         </p>
                       </div>
                     </label>
@@ -640,7 +640,7 @@ export default function SettingsPage() {
                           Show exchange rate on invoices
                         </span>
                         <p className="text-sm text-gray-500">
-                          Example: "Exchange rate: 1 USD = 1.35 CAD"
+                          Example: &ldquo;Exchange rate: 1 USD = 1.35 CAD&rdquo;
                         </p>
                       </div>
                     </label>

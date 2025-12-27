@@ -26,7 +26,8 @@ export default function RecurringInvoicesPage() {
 
   useEffect(() => {
     fetchProfiles();
-  }, [fetchProfiles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStatusChange = async (profileId: string, newStatus: string) => {
     const { error } = await updateRecurringProfile(profileId, { status: newStatus });

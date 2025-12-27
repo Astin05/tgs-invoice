@@ -17,11 +17,22 @@ import {
   Clock,
 } from 'lucide-react';
 
+interface EstimateData {
+  id: string;
+  estimate_number: string;
+  issue_date: string;
+  expiry_date: string;
+  total_amount: number;
+  status: string;
+  notes?: string;
+  [key: string]: unknown;
+}
+
 export default function PortalEstimatesPage() {
   const { sessionToken } = usePortal();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [estimates, setEstimates] = useState<Record<string, unknown>[]>([]);
+  const [estimates, setEstimates] = useState<EstimateData[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
 
   const loadEstimates = async () => {
@@ -34,7 +45,7 @@ export default function PortalEstimatesPage() {
     }
 
     const { data } = await getClientEstimates(sessionData.client_id, statusFilter);
-    setEstimates(data || []);
+    setEstimates((data as EstimateData[]) || []);
     setLoading(false);
   };
 
@@ -44,6 +55,7 @@ export default function PortalEstimatesPage() {
       return;
     }
     loadEstimates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionToken, statusFilter]);
 
   const handleAcceptEstimate = async (estimateId: string) => {

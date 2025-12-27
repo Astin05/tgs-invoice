@@ -36,8 +36,9 @@ export default function SignupPage() {
     try {
       await signUp(email, password, fullName, companyName);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account');
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setError((err as any).message || 'Failed to create account');
     } finally {
       setLoading(false);
     }

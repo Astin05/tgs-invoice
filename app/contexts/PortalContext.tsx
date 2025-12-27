@@ -28,6 +28,7 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     if (token) {
       setSessionToken(token);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = (token: string) => {
