@@ -3,10 +3,10 @@ import { acceptEstimate, declineEstimate } from '@/app/lib/db-services';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const estimateId = params.id;
+    const { id: estimateId } = await params;
     const { comments } = await request.json();
 
     const { error } = await acceptEstimate(estimateId, comments);

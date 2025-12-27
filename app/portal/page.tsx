@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { verifyPortalSession } from '@/app/lib/db-services';
 import { usePortal } from '@/app/contexts/PortalContext';
@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Mail, ArrowRight, Loader2 } from 'lucide-react';
 
-export default function PortalEntryPage() {
+function PortalContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const { login } = usePortal();
@@ -150,5 +150,17 @@ export default function PortalEntryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PortalEntryPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      </div>
+    }>
+      <PortalContent />
+    </Suspense>
   );
 }

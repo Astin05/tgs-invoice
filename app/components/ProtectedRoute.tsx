@@ -21,7 +21,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         setIsAuthorized(true);
       }
     }
-  }, [user, loading, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading]);
 
   if (loading) {
     return (

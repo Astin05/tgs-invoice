@@ -15,10 +15,22 @@ import {
   Loader2,
 } from 'lucide-react';
 
+interface ClientData {
+  name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
+  [key: string]: unknown;
+}
+
 export default function PortalProfilePage() {
   const { sessionToken } = usePortal();
   const router = useRouter();
-  const [client, setClient] = useState<Record<string, unknown> | null>(null);
+  const [client, setClient] = useState<ClientData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,15 +52,16 @@ export default function PortalProfilePage() {
       return;
     }
 
-    setClient(sessionData.clients);
+    const clientData = sessionData.clients as ClientData;
+    setClient(clientData);
     setFormData({
-      name: sessionData.clients.name || '',
-      phone: sessionData.clients.phone || '',
-      address: sessionData.clients.address || '',
-      city: sessionData.clients.city || '',
-      state: sessionData.clients.state || '',
-      zip_code: sessionData.clients.zip_code || '',
-      country: sessionData.clients.country || 'United States',
+      name: clientData.name || '',
+      phone: clientData.phone || '',
+      address: clientData.address || '',
+      city: clientData.city || '',
+      state: clientData.state || '',
+      zip_code: clientData.zip_code || '',
+      country: clientData.country || 'United States',
     });
     setLoading(false);
   };
@@ -70,7 +83,7 @@ export default function PortalProfilePage() {
       } else {
         alert('Failed to update profile');
       }
-    } catch (err) {
+    } catch {
       alert('An error occurred');
     } finally {
       setSaving(false);
@@ -83,6 +96,7 @@ export default function PortalProfilePage() {
       return;
     }
     loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionToken]);
 
   if (loading) {

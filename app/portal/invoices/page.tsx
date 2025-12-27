@@ -14,11 +14,21 @@ import {
   Filter,
 } from 'lucide-react';
 
+interface InvoiceData {
+  id: string;
+  invoice_number: string;
+  issue_date: string;
+  due_date: string;
+  total_amount: number;
+  status: string;
+  [key: string]: unknown;
+}
+
 export default function PortalInvoicesPage() {
   const { sessionToken } = usePortal();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [invoices, setInvoices] = useState<Record<string, unknown>[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
 
   const loadInvoices = async () => {
@@ -31,7 +41,7 @@ export default function PortalInvoicesPage() {
     }
 
     const { data } = await getClientInvoices(sessionData.client_id, statusFilter);
-    setInvoices(data || []);
+    setInvoices((data as InvoiceData[]) || []);
     setLoading(false);
   };
 
@@ -52,6 +62,7 @@ export default function PortalInvoicesPage() {
       return;
     }
     loadInvoices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionToken, statusFilter]);
 
   return (
